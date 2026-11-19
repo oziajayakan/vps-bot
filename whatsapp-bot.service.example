@@ -1,0 +1,33 @@
+# Contoh unit systemd untuk menjalankan NOVA WhatsApp Bot 24/7 di VPS Linux (Ubuntu/Debian)
+#
+# Cara pasang:
+# 1. Salin file ini: sudo cp whatsapp-bot.service.example /etc/systemd/system/nova-wa-bot.service
+# 2. Sesuaikan User dan path WorkingDirectory
+# 3. Pastikan pairing sudah dilakukan sekali secara interaktif (auth_info sudah ada)
+#    atau WA_PHONE_NUMBER sudah diisi di .env
+# 4. Jalankan:
+#    sudo systemctl daemon-reload
+#    sudo systemctl enable nova-wa-bot
+#    sudo systemctl start nova-wa-bot
+#    sudo journalctl -u nova-wa-bot -f
+
+[Unit]
+Description=NOVA WhatsApp AI Chatbot (Baileys Pairing Code)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Chatbotwa/whatsapp-bot
+ExecStart=/usr/bin/node src/index.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+# Hardening ringan
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
