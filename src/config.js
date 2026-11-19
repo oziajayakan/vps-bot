@@ -98,7 +98,7 @@ export function loadConfig() {
   const botFooter =
     process.env.BOT_FOOTER !== undefined
       ? String(process.env.BOT_FOOTER).trim()
-      : `_— Dibalas otomatis oleh ${botName} AI_`;
+      : "> _By Nova.ai_";
 
   return {
     botRoot: BOT_ROOT,
