@@ -9,12 +9,12 @@ export const FALLBACK_MODELS = [
   "gemini-3.5-flash",
 ];
 
-const CONNECT_TIMEOUT_MS = 10000;
-const READ_TIMEOUT_MS = 45000;
+const REQUEST_TIMEOUT_MS = 60000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let workingModel = null;
+let disableThinking = true;
 
 /**
  * Mengembalikan nama model Gemini yang sedang aktif digunakan.
@@ -97,13 +97,13 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
   let lastErrorDetail = "";
   let lastStatus = 502;
 
-  for (const modelName of candidateModels) {
+  for (let mi = 0; mi < candidateModels.length; mi++) {
+    const modelName = candidateModels[mi];
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse`;
     attempts++;
 
     const ac = new AbortController();
-    const connectTimer = setTimeout(() => ac.abort(), CONNECT_TIMEOUT_MS);
-    let readTimer = null;
+    const requestTimer = setTimeout(() => ac.abort(), REQUEST_TIMEOUT_MS);
 
     try {
       const resp = await fetch(url, {
@@ -120,16 +120,14 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
             temperature: 0.7,
             topP: 0.9,
             maxOutputTokens: 1024,
+            ...(disableThinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
           },
         }),
       });
 
-      clearTimeout(connectTimer);
-
       if (resp.ok && resp.body) {
-        readTimer = setTimeout(() => ac.abort(), READ_TIMEOUT_MS);
         const replyText = await readGeminiSseReply(resp.body);
-        clearTimeout(readTimer);
+        clearTimeout(requestTimer);
 
         if (replyText) {
           workingModel = modelName;
@@ -142,10 +140,20 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
         continue;
       }
 
+      clearTimeout(requestTimer);
+
       lastStatus = resp.status || 502;
       try {
         lastErrorDetail = (await resp.json())?.error?.message || "";
       } catch {}
+
+      // Jika model menolak thinkingBudget: 0 (HTTP 400), ulangi model yang sama tanpa parameter itu
+      if (resp.status === 400 && disableThinking && /thinking|budget/i.test(lastErrorDetail)) {
+        disableThinking = false;
+        attempts--;
+        mi--;
+        continue;
+      }
 
       const isRetryable =
         [404, 429, 500, 502, 503, 504].includes(resp.status) ||
@@ -161,8 +169,7 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
       console.warn(`[AI] Model ${modelName} gagal (${resp.status}), beralih ke fallback...`);
       await sleep(250);
     } catch (err) {
-      clearTimeout(connectTimer);
-      if (readTimer) clearTimeout(readTimer);
+      clearTimeout(requestTimer);
       lastErrorDetail =
         err?.name === "AbortError"
           ? "Timeout saat menghubungi Gemini API."
