@@ -1,10 +1,10 @@
 import { SYSTEM_PROMPT } from "./system-prompt.js";
 
 export const FALLBACK_MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3.7-flash",
-  "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.7-flash",
+  "gemini-3.8-flash",
   "gemini-flash-latest",
 ];
 
@@ -18,7 +18,7 @@ let workingModel = null;
 /**
  * Mengembalikan nama model Gemini yang sedang aktif digunakan.
  */
-export function getActiveModel(defaultModel = "gemini-3.8-flash") {
+export function getActiveModel(defaultModel = "gemini-3.5-flash-lite") {
   return workingModel || defaultModel || FALLBACK_MODELS[0];
 }
 
@@ -81,7 +81,7 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
     .filter((m) => m && typeof m.content === "string" && m.content.trim())
     .map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content.slice(0, 8000) }],
+      parts: [{ text: m.content.slice(0, 4000) }],
     }));
 
   if (normalizedMessages.length === 0) {
@@ -116,9 +116,9 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
           systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
           contents: normalizedMessages,
           generationConfig: {
-            temperature: 0.8,
-            topP: 0.95,
-            maxOutputTokens: 2048,
+            temperature: 0.7,
+            topP: 0.9,
+            maxOutputTokens: 1024,
           },
         }),
       });

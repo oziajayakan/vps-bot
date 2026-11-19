@@ -97,7 +97,7 @@ export function loadConfig() {
   return {
     botRoot: BOT_ROOT,
     geminiApiKey: (process.env.GEMINI_API_KEY || "").trim(),
-    geminiModel: (process.env.GEMINI_MODEL || "gemini-3.8-flash").trim(),
+    geminiModel: (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim(),
     waPhoneNumber: sanitizePhoneNumber(process.env.WA_PHONE_NUMBER || ""),
     authDir,
     botName: (process.env.BOT_NAME || "NOVA").trim() || "NOVA",
@@ -105,7 +105,7 @@ export function loadConfig() {
     groupMode,
     ignoreArchived: String(process.env.IGNORE_ARCHIVED ?? "true").trim().toLowerCase() !== "false",
     allowedNumbers,
-    maxHistoryMessages: clampInt(process.env.MAX_HISTORY_MESSAGES, 20, 2, 30),
+    maxHistoryMessages: clampInt(process.env.MAX_HISTORY_MESSAGES, 10, 2, 30),
     cooldownMs: clampInt(process.env.COOLDOWN_MS, 1500, 0, 60000),
     healthPort: clampInt(process.env.HEALTH_PORT, 0, 0, 65535),
     healthHost: (process.env.HEALTH_HOST || "127.0.0.1").trim() || "127.0.0.1",
