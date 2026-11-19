@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import makeWASocket, {
   Browsers,
@@ -102,6 +104,48 @@ export async function startWhatsAppBot({ config, db, forcePairNotice = false }) 
   const chatQueues = new Map();
   const lastReplyByChat = new Map();
 
+  // Penyimpanan daftar JID chat/grup yang diarsipkan agar tetap terjaga saat bot restart
+  const archivedStorePath = path.join(config.authDir, "archived-chats.json");
+  const archivedChats = new Set();
+  try {
+    if (fs.existsSync(archivedStorePath)) {
+      const saved = JSON.parse(fs.readFileSync(archivedStorePath, "utf8"));
+      if (Array.isArray(saved)) {
+        for (const jid of saved) {
+          if (typeof jid === "string" && jid) archivedChats.add(jid);
+        }
+      }
+    }
+  } catch {}
+
+  function saveArchivedChats() {
+    try {
+      if (!fs.existsSync(config.authDir)) {
+        fs.mkdirSync(config.authDir, { recursive: true });
+      }
+      fs.writeFileSync(archivedStorePath, JSON.stringify([...archivedChats], null, 2), "utf8");
+    } catch {}
+  }
+
+  function syncArchivedState(chatsList) {
+    if (!Array.isArray(chatsList) || chatsList.length === 0) return;
+    let changed = false;
+    for (const chat of chatsList) {
+      if (!chat?.id || typeof chat.archived !== "boolean") continue;
+      if (chat.archived) {
+        if (!archivedChats.has(chat.id)) {
+          archivedChats.add(chat.id);
+          changed = true;
+        }
+      } else if (archivedChats.delete(chat.id)) {
+        changed = true;
+      }
+    }
+    if (changed) {
+      saveArchivedChats();
+    }
+  }
+
   let activeSock = null;
   let reconnectTimer = null;
   let reconnectAttempts = 0;
@@ -157,11 +201,19 @@ export async function startWhatsAppBot({ config, db, forcePairNotice = false }) 
 
   async function processIncomingMessage(sock, msg) {
     const remoteJid = msg?.key?.remoteJid || "";
+    const remoteJidAlt = msg?.key?.remoteJidAlt || "";
     if (!remoteJid || msg.key.fromMe) return;
     if (
       remoteJid === "status@broadcast" ||
       remoteJid.endsWith("@broadcast") ||
       remoteJid.endsWith("@newsletter")
+    ) {
+      return;
+    }
+
+    if (
+      config.ignoreArchived &&
+      (archivedChats.has(remoteJid) || (remoteJidAlt && archivedChats.has(remoteJidAlt)))
     ) {
       return;
     }
@@ -381,6 +433,9 @@ export async function startWhatsAppBot({ config, db, forcePairNotice = false }) 
     let pairingRequested = false;
 
     sock.ev.on("creds.update", saveCreds);
+    sock.ev.on("messaging-history.set", ({ chats }) => syncArchivedState(chats));
+    sock.ev.on("chats.upsert", (chats) => syncArchivedState(chats));
+    sock.ev.on("chats.update", (updates) => syncArchivedState(updates));
 
     sock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -420,6 +475,9 @@ export async function startWhatsAppBot({ config, db, forcePairNotice = false }) 
         connectionState = "closed";
 
         sock.ev.removeAllListeners("creds.update");
+        sock.ev.removeAllListeners("messaging-history.set");
+        sock.ev.removeAllListeners("chats.upsert");
+        sock.ev.removeAllListeners("chats.update");
         sock.ev.removeAllListeners("connection.update");
         sock.ev.removeAllListeners("messages.upsert");
 

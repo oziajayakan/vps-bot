@@ -103,6 +103,7 @@ export function loadConfig() {
     botName: (process.env.BOT_NAME || "NOVA").trim() || "NOVA",
     commandPrefix: (process.env.BOT_PREFIX || "!").trim() || "!",
     groupMode,
+    ignoreArchived: String(process.env.IGNORE_ARCHIVED ?? "true").trim().toLowerCase() !== "false",
     allowedNumbers,
     maxHistoryMessages: clampInt(process.env.MAX_HISTORY_MESSAGES, 20, 2, 30),
     cooldownMs: clampInt(process.env.COOLDOWN_MS, 1500, 0, 60000),
