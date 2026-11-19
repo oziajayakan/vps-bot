@@ -103,7 +103,7 @@ export function loadConfig() {
   return {
     botRoot: BOT_ROOT,
     geminiApiKey: (process.env.GEMINI_API_KEY || "").trim(),
-    geminiModel: (process.env.GEMINI_MODEL || "gemini-2.5-flash-lite").trim(),
+    geminiModel: (process.env.GEMINI_MODEL || "gemini-flash-lite-latest").trim(),
     waPhoneNumber: sanitizePhoneNumber(process.env.WA_PHONE_NUMBER || ""),
     authDir,
     botName,

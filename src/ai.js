@@ -1,16 +1,15 @@
 import { SYSTEM_PROMPT } from "./system-prompt.js";
 
 export const FALLBACK_MODELS = [
-  "gemini-2.5-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-2.0-flash",
+  "gemini-flash-lite-latest",
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-flash-latest",
   "gemini-3.5-flash-lite",
   "gemini-3.5-flash",
-  "gemini-flash-latest",
 ];
 
-const CONNECT_TIMEOUT_MS = 25000;
+const CONNECT_TIMEOUT_MS = 10000;
 const READ_TIMEOUT_MS = 45000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -20,7 +19,7 @@ let workingModel = null;
 /**
  * Mengembalikan nama model Gemini yang sedang aktif digunakan.
  */
-export function getActiveModel(defaultModel = "gemini-2.5-flash-lite") {
+export function getActiveModel(defaultModel = "gemini-flash-lite-latest") {
   return workingModel || defaultModel || FALLBACK_MODELS[0];
 }
 
