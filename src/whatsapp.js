@@ -365,7 +365,10 @@ export async function startWhatsAppBot({ config, db, forcePairNotice = false }) 
         });
 
         const formatted = formatForWhatsApp(reply.text);
-        const chunks = splitLongMessage(formatted, 3800);
+        const withFooter = config.botFooter
+          ? `${formatted}\n\n${config.botFooter}`
+          : formatted;
+        const chunks = splitLongMessage(withFooter, 3800);
         if (chunks.length === 0) return;
 
         for (let i = 0; i < chunks.length; i++) {

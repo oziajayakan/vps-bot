@@ -94,13 +94,20 @@ export function loadConfig() {
       : path.resolve(BOT_ROOT, sqliteRaw)
     : path.join(BOT_ROOT, ".tmp", "nova_whatsapp.db");
 
+  const botName = (process.env.BOT_NAME || "NOVA").trim() || "NOVA";
+  const botFooter =
+    process.env.BOT_FOOTER !== undefined
+      ? String(process.env.BOT_FOOTER).trim()
+      : `_— Dibalas otomatis oleh ${botName} AI_`;
+
   return {
     botRoot: BOT_ROOT,
     geminiApiKey: (process.env.GEMINI_API_KEY || "").trim(),
     geminiModel: (process.env.GEMINI_MODEL || "gemini-2.5-flash-lite").trim(),
     waPhoneNumber: sanitizePhoneNumber(process.env.WA_PHONE_NUMBER || ""),
     authDir,
-    botName: (process.env.BOT_NAME || "NOVA").trim() || "NOVA",
+    botName,
+    botFooter,
     commandPrefix: (process.env.BOT_PREFIX || "!").trim() || "!",
     groupMode,
     ignoreArchived: String(process.env.IGNORE_ARCHIVED ?? "true").trim().toLowerCase() !== "false",
