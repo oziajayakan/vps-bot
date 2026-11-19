@@ -1,8 +1,12 @@
+import dns from "node:dns";
 import http from "node:http";
 import { getActiveModel } from "./ai.js";
 import { loadConfig } from "./config.js";
 import { getDb } from "./db.js";
 import { startWhatsAppBot } from "./whatsapp.js";
+
+// Prioritaskan IPv4 agar koneksi fetch ke Gemini API tidak hang/timeout di VPS dengan routing IPv6 bermasalah
+dns.setDefaultResultOrder("ipv4first");
 
 function startHealthServer(config, db, getBotStatus) {
   if (!config.healthPort || config.healthPort <= 0) {

@@ -10,7 +10,7 @@ export const FALLBACK_MODELS = [
   "gemini-flash-latest",
 ];
 
-const CONNECT_TIMEOUT_MS = 12000;
+const CONNECT_TIMEOUT_MS = 25000;
 const READ_TIMEOUT_MS = 45000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -155,9 +155,11 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
         );
 
       if (!isRetryable) {
+        console.warn(`[AI] Model ${modelName} ditolak (${resp.status}): ${lastErrorDetail}`);
         break;
       }
 
+      console.warn(`[AI] Model ${modelName} gagal (${resp.status}), beralih ke fallback...`);
       await sleep(250);
     } catch (err) {
       clearTimeout(connectTimer);
@@ -166,6 +168,7 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
         err?.name === "AbortError"
           ? "Timeout saat menghubungi Gemini API."
           : err?.message || "Gagal menghubungi Gemini API.";
+      console.warn(`[AI] Model ${modelName} error: ${lastErrorDetail}`);
       if (workingModel === modelName) workingModel = null;
       await sleep(250);
     }
