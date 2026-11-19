@@ -148,7 +148,7 @@ export async function generateReply({ apiKey, defaultModel, messages }) {
       } catch {}
 
       // Jika model menolak thinkingBudget: 0 (HTTP 400), ulangi model yang sama tanpa parameter itu
-      if (resp.status === 400 && disableThinking && /thinking|budget/i.test(lastErrorDetail)) {
+      if (resp.status === 400 && disableThinking) {
         disableThinking = false;
         attempts--;
         mi--;
